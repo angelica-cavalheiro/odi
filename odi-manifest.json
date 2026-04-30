@@ -1,0 +1,18 @@
+{
+  "datasets": [
+    {
+      "id": "financeiro-l1",
+      "area": "financeiro",
+      "areaLabel": "Financeiro",
+      "periodLabel": "L1 — outubro 2025",
+      "file": "odi-financeiro-L1.csv"
+    },
+    {
+      "id": "financeiro-l2",
+      "area": "financeiro",
+      "areaLabel": "Financeiro",
+      "periodLabel": "L2 — março/abril 2026",
+      "file": "odi-financeiro-L2.csv"
+    }
+  ]
+}
