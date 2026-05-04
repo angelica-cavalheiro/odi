@@ -175,6 +175,39 @@
     });
   }
 
+  function ratingColumnKeysFromRowKeys(keys) {
+    return keys.filter(k =>
+      k.startsWith(IMPORT_PREFIX) ||
+      k.startsWith(SAT_OK) ||
+      k.startsWith(SAT_TYPO)
+    );
+  }
+
+  /**
+   * Drops respondents whose Importância / Satisfação ratings are all the same value (straight-lining).
+   * Rating columns are detected by prefix only; metadata and qualitative fields are ignored.
+   */
+  function removeStraightLiners(data) {
+    const total = data.length;
+    if (total === 0) {
+      console.log('Removed 0 straight-line respondents out of 0. Remaining: 0');
+      return [];
+    }
+    const ratingKeys = ratingColumnKeysFromRowKeys(Object.keys(data[0]));
+    if (ratingKeys.length < 2) {
+      console.log(`Removed 0 straight-line respondents out of ${total}. Remaining: ${total}`);
+      return data.slice();
+    }
+    const kept = data.filter(row => {
+      const nums = ratingKeys.map(k => toNumber(row[k]));
+      if (nums.some(n => Number.isNaN(n))) return true;
+      return new Set(nums).size !== 1;
+    });
+    const n = total - kept.length;
+    console.log(`Removed ${n} straight-line respondents out of ${total}. Remaining: ${total - n}`);
+    return kept;
+  }
+
   // Data logic
   function detectPairs(cols) {
     console.log('🔍 Detectando pares...');
@@ -509,6 +542,7 @@
         Object.keys(r).forEach(k => o[normalizeSpaces(k)] = r[k]);
         return o;
       });
+      rawRows = removeStraightLiners(rawRows);
       if (loadId !== csvLoadGeneration) return;
       if (!columns.includes(COL_VOLUME)) {
         notify(`Coluna não encontrada: "${COL_VOLUME}".`, 'error');
