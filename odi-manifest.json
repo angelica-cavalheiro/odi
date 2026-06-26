@@ -22,6 +22,13 @@
       "file": "odi-logistica-L1.csv"
     },
     {
+      "id": "logistica-l2",
+      "area": "logistica",
+      "areaLabel": "Logística",
+      "periodLabel": "L2 — junho 2026",
+      "file": "odi-logistica-L2.csv"
+    },
+    {
       "id": "canonico-l1",
       "area": "canonico",
       "areaLabel": "Canônico",
