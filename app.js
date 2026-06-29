@@ -1,7 +1,12 @@
 /* Minimal client-side ODI map using plain SVG and CSV upload */
 (function() {
-  const COL_VOLUME = 'Qual o volume de pedidos mensal da sua empresa?';
+  let COL_VOLUME = null;
+  const COL_VOLUME_OPTIONS = [
+    'Qual o volume de pedidos mensal da sua empresa?',
+    'Qual o volume de envios mensal da sua empresa?'
+  ];
   const COL_CANAL = 'Como a sua empresa realiza vendas atualmente??';
+  const COL_TRANSPORTADORA = 'Transportadora principal';
   const IMPORT_PREFIX = 'Importância - ';
   const SAT_OK = 'Satisfação - ';
   const SAT_TYPO = 'Satistação - ';
@@ -11,6 +16,7 @@
   const datasetContextEl = document.getElementById('datasetContext');
   const volumeSelect = document.getElementById('volumeSelect');
   const canalSelect = document.getElementById('canalSelect');
+  const transportadoraSelect = document.getElementById('transportadoraSelect');
   const outcomeSearch = document.getElementById('outcomeSearch');
   const resetBtn = document.getElementById('resetBtn');
   const exportBtn = document.getElementById('exportBtn');
@@ -101,7 +107,7 @@
     }
   }
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
-  function setBusy(b) { [areaSelect, periodSelect, volumeSelect, canalSelect, outcomeSearch, resetBtn, exportBtn].forEach(el => { if (el) el.disabled = b; }); if (b) show(loadingEl); else hide(loadingEl); }
+  function setBusy(b) { [areaSelect, periodSelect, volumeSelect, canalSelect, transportadoraSelect, outcomeSearch, resetBtn, exportBtn].forEach(el => { if (el) el.disabled = b; }); if (b) show(loadingEl); else hide(loadingEl); }
 
   function datasetsForArea(area) {
     return manifest.datasets.filter(d => d.area === area);
@@ -263,11 +269,32 @@
     return recs;
   }
 
+  function populateSelectFilter(selectEl, columnName, rows) {
+    const wrap = selectEl && selectEl.closest('.filter');
+    const hasCol = columns.includes(columnName);
+    if (wrap) wrap.hidden = !hasCol;
+    if (!selectEl || !hasCol) {
+      if (selectEl) {
+        selectEl.innerHTML = '<option value="__ALL__">Todos</option>';
+        selectEl.value = '__ALL__';
+      }
+      return;
+    }
+    const values = ['__ALL__', ...uniqueSorted(rows.map(r => r[columnName]))];
+    selectEl.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${v === '__ALL__' ? 'Todos' : escapeHtml(v)}</option>`).join('');
+  }
+
+  function detectVolumeColumn(cols) {
+    if (!COL_VOLUME) {
+      COL_VOLUME = COL_VOLUME_OPTIONS.find(opt => cols.includes(opt));
+    }
+  }
+
   function populateFilters(rows) {
-    const volumes = ['__ALL__', ...uniqueSorted(rows.map(r => r[COL_VOLUME]))];
-    volumeSelect.innerHTML = volumes.map(v => `<option value="${escapeHtml(v)}">${v === '__ALL__' ? 'Todos' : escapeHtml(v)}</option>`).join('');
-    const canais = ['__ALL__', ...uniqueSorted(rows.map(r => r[COL_CANAL]))];
-    canalSelect.innerHTML = canais.map(v => `<option value="${escapeHtml(v)}">${v === '__ALL__' ? 'Todos' : escapeHtml(v)}</option>`).join('');
+    detectVolumeColumn(columns);
+    populateSelectFilter(volumeSelect, COL_VOLUME, rows);
+    populateSelectFilter(canalSelect, COL_CANAL, rows);
+    populateSelectFilter(transportadoraSelect, COL_TRANSPORTADORA, rows);
     restoreFilterState();
   }
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[ch])); }
@@ -275,9 +302,11 @@
   function applyFilters(rows) {
     const v = volumeSelect.value;
     const c = canalSelect.value;
+    const t = transportadoraSelect && transportadoraSelect.value;
     let out = [...rows];
-    if (v && v !== '__ALL__') out = out.filter(r => String(r[COL_VOLUME]) === v);
-    if (c && c !== '__ALL__') out = out.filter(r => String(r[COL_CANAL]) === c);
+    if (v && v !== '__ALL__' && columns.includes(COL_VOLUME)) out = out.filter(r => String(r[COL_VOLUME]) === v);
+    if (c && c !== '__ALL__' && columns.includes(COL_CANAL)) out = out.filter(r => String(r[COL_CANAL]) === c);
+    if (t && t !== '__ALL__' && columns.includes(COL_TRANSPORTADORA)) out = out.filter(r => String(r[COL_TRANSPORTADORA]) === t);
     return out;
   }
 
@@ -310,6 +339,16 @@
         remove: () => { canalSelect.value = '__ALL__'; update(); }
       });
     }
+
+    // Transportadora filter
+    if (transportadoraSelect && transportadoraSelect.value && transportadoraSelect.value !== '__ALL__') {
+      filters.push({
+        type: 'transportadora',
+        label: 'Transportadora',
+        value: transportadoraSelect.value,
+        remove: () => { transportadoraSelect.value = '__ALL__'; update(); }
+      });
+    }
     
     // Search filter
     if (outcomeSearch.value && outcomeSearch.value.trim()) {
@@ -340,6 +379,8 @@
           volumeSelect.value = '__ALL__';
         } else if (type === 'canal') {
           canalSelect.value = '__ALL__';
+        } else if (type === 'transportadora') {
+          transportadoraSelect.value = '__ALL__';
         } else if (type === 'search') {
           outcomeSearch.value = '';
         }
@@ -483,6 +524,7 @@
     console.log('📊 Dados brutos:', rawRows.length);
 
     try {
+      detectVolumeColumn(columns);
       const pairs = detectPairs(columns);
       const filtered = applyFilters(rawRows);
       console.log('🔍 Dados filtrados:', filtered.length);
@@ -544,9 +586,6 @@
       });
       rawRows = removeStraightLiners(rawRows);
       if (loadId !== csvLoadGeneration) return;
-      if (!columns.includes(COL_VOLUME)) {
-        notify(`Coluna não encontrada: "${COL_VOLUME}".`, 'error');
-      }
       populateFilters(rawRows);
       update();
       if (!silent) notify('Conjunto de dados atualizado.', 'success');
@@ -604,6 +643,7 @@
         datasetId: currentDatasetId,
         v: volumeSelect.value,
         c: canalSelect.value,
+        t: transportadoraSelect ? transportadoraSelect.value : '__ALL__',
         s: outcomeSearch.value
       }));
     } catch (_) {}
@@ -617,6 +657,10 @@
       volumeSelect.value = volOk ? f.v : '__ALL__';
       const canalOk = f.c && [...canalSelect.options].some(o => o.value === f.c);
       canalSelect.value = canalOk ? f.c : '__ALL__';
+      if (transportadoraSelect) {
+        const transpOk = f.t && [...transportadoraSelect.options].some(o => o.value === f.t);
+        transportadoraSelect.value = transpOk ? f.t : '__ALL__';
+      }
       if (typeof f.s === 'string') outcomeSearch.value = f.s;
     } catch (_) {}
   }
@@ -626,7 +670,7 @@
   // Debounce na busca para reduzir repaints
   const onInputDebounced = debounce(update, 120);
   // <select> nem sempre dispara "input" em Safari/WebKit; "change" é o evento fiável.
-  [volumeSelect, canalSelect].forEach(el => el.addEventListener('change', update));
+  [volumeSelect, canalSelect, transportadoraSelect].filter(Boolean).forEach(el => el.addEventListener('change', update));
   areaSelect.addEventListener('change', () => {
     const area = areaSelect.value;
     populatePeriodSelectForArea(area);
@@ -643,6 +687,7 @@
   resetBtn.addEventListener('click', () => {
     volumeSelect.value = '__ALL__';
     canalSelect.value = '__ALL__';
+    if (transportadoraSelect) transportadoraSelect.value = '__ALL__';
     outcomeSearch.value = '';
     update();
   });
