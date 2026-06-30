@@ -15,6 +15,7 @@
   const periodSelect = document.getElementById('periodSelect');
   const datasetContextEl = document.getElementById('datasetContext');
   const volumeSelect = document.getElementById('volumeSelect');
+  const volumeLabel = document.getElementById('volumeLabel');
   const canalSelect = document.getElementById('canalSelect');
   const transportadoraSelect = document.getElementById('transportadoraSelect');
   const outcomeSearch = document.getElementById('outcomeSearch');
@@ -287,6 +288,10 @@
   function detectVolumeColumn(cols) {
     if (!COL_VOLUME) {
       COL_VOLUME = COL_VOLUME_OPTIONS.find(opt => cols.includes(opt));
+      if (COL_VOLUME && volumeLabel) {
+        const isSending = COL_VOLUME.includes('envios');
+        volumeLabel.textContent = isSending ? 'Volume de envios' : 'Volume de pedidos';
+      }
     }
   }
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gestão Financeira - Outcome Map (ODI) — Importância × Satisfação</title>
+  <title>Bling — Outcome Map (ODI) — Importância × Satisfação</title>
   <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -43,16 +43,20 @@ python3 -m http.server 8080</code></pre>
             <select id="periodSelect" aria-describedby="dataset-help"><option value="">—</option></select>
           </div>
         </div>
-        <p id="dataset-help" class="hint filter-hint">Escolha a área e o lançamento (ex.: L1 out/2025, L2 mar–abr/2026). Os filtros abaixo aplicam-se às respostas desse conjunto.</p>
+        <p id="dataset-help" class="hint filter-hint">Escolha a área e o lançamento. Os filtros abaixo aplicam-se às respostas desse conjunto.</p>
         <!-- Filtros em linha horizontal -->
         <div class="filters-row">
           <div class="filter">
-            <label for="volumeSelect">Volume de pedidos</label>
+            <label for="volumeSelect" id="volumeLabel">Volume de pedidos</label>
             <select id="volumeSelect"><option value="__ALL__">Todos</option></select>
           </div>
           <div class="filter">
             <label for="canalSelect">Canal de vendas</label>
             <select id="canalSelect"><option value="__ALL__">Todos</option></select>
+          </div>
+          <div class="filter">
+            <label for="transportadoraSelect">Transportadora principal</label>
+            <select id="transportadoraSelect"><option value="__ALL__">Todos</option></select>
           </div>
           <div class="filter search-filter">
             <label for="outcomeSearch">Buscar outcome</label>
