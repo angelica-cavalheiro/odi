@@ -295,8 +295,19 @@
     }
   }
 
+  function adaptFiltersToDataset(cols) {
+    const wrapTransportadora = transportadoraSelect && transportadoraSelect.closest('.filter');
+    const hasTransportadora = cols.includes(COL_TRANSPORTADORA);
+    if (wrapTransportadora) wrapTransportadora.hidden = !hasTransportadora;
+
+    const wrapCanal = canalSelect && canalSelect.closest('.filter');
+    const hasCanal = cols.includes(COL_CANAL);
+    if (wrapCanal) wrapCanal.hidden = !hasCanal;
+  }
+
   function populateFilters(rows) {
     detectVolumeColumn(columns);
+    adaptFiltersToDataset(columns);
     populateSelectFilter(volumeSelect, COL_VOLUME, rows);
     populateSelectFilter(canalSelect, COL_CANAL, rows);
     populateSelectFilter(transportadoraSelect, COL_TRANSPORTADORA, rows);
